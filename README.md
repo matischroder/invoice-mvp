@@ -4,8 +4,6 @@ Simple invoice generator for Australian contractors and tradies.
 
 ## Features
 - Generate PDF invoices
-- Hour-based billing
-- Hour-based billing
 - Chat-based invoice creation (natural language)
 - ABN compliant
 - Optional GST support (planned)
@@ -18,13 +16,15 @@ Simple invoice generator for Australian contractors and tradies.
 
 ## Getting Started
 
-1. Install dependencies
-   npm install
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
 
-2. Run development server
-   npm run dev
+Create a `.env.local` file:
 
-3. Create a .env.local file with:
-   OPENAI_API_KEY=your_key_here
+\`\`\`
+OPENAI_API_KEY=your_key_here
+\`\`\`
 
-4. Open http://localhost:3000
+Open http://localhost:3000
