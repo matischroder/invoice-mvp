@@ -1,12 +1,43 @@
-const { PDFDocument, rgb } = require("pdf-lib");
+import { PDFDocument, rgb } from "pdf-lib";
+import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(req, res) {
+interface InvoiceItem {
+  type: "work" | "purchase";
+  day?: string;
+  hours?: string;
+  rate?: string;
+  description?: string;
+  quantity?: string;
+  unitPrice?: string;
+}
+
+interface GenerateRequest {
+  yourName: string;
+  abn: string;
+  clientName: string;
+  clientEmail: string;
+  invoiceNumber: string;
+  date: string;
+  items: InvoiceItem[];
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Buffer | { error: string }>,
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { yourName, abn, clientName, clientEmail, invoiceNumber, date, items } =
-    req.body;
+  const {
+    yourName,
+    abn,
+    clientName,
+    clientEmail,
+    invoiceNumber,
+    date,
+    items,
+  }: GenerateRequest = req.body;
 
   try {
     const pdfDoc = await PDFDocument.create();
@@ -82,11 +113,14 @@ export default async function handler(req, res) {
       page.drawText(`${item.day || item.description}`, { x: 55, y, size: 12 });
       page.drawText(`${item.hours}`, { x: 250, y, size: 12 });
       page.drawText(`$${item.rate}`, { x: 350, y, size: 12 });
-      page.drawText(`$${(item.hours * item.rate).toFixed(2)}`, {
-        x: 450,
-        y,
-        size: 12,
-      });
+      page.drawText(
+        `$${(parseFloat(item.hours || "0") * parseFloat(item.rate || "0")).toFixed(2)}`,
+        {
+          x: 450,
+          y,
+          size: 12,
+        },
+      );
       y -= 20;
     });
 
@@ -94,7 +128,18 @@ export default async function handler(req, res) {
     y -= 10;
     page.drawLine({ start: { x: 400, y }, end: { x: 550, y }, thickness: 1 });
     y -= 20;
-    const total = items.reduce((sum, item) => sum + item.hours * item.rate, 0);
+    const total = items.reduce((sum, item) => {
+      if (item.type === "work") {
+        return (
+          sum + parseFloat(item.hours || "0") * parseFloat(item.rate || "0")
+        );
+      } else {
+        return (
+          sum +
+          parseFloat(item.quantity || "0") * parseFloat(item.unitPrice || "0")
+        );
+      }
+    }, 0);
     page.drawText(`Total: $${total.toFixed(2)}`, {
       x: 400,
       y,

@@ -1,10 +1,21 @@
 import OpenAI from "openai";
+import { NextApiRequest, NextApiResponse } from "next";
+
+interface InvoiceItem {
+  day: string;
+  hours: number;
+  rate: number;
+  description: string;
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<{ items: InvoiceItem[] } | { error: string }>,
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -33,8 +44,11 @@ User message: ${message}`,
       temperature: 0,
     });
 
-    const response = completion.choices[0].text.trim();
-    const data = JSON.parse(response);
+    const response = completion.choices[0].text?.trim();
+    if (!response) {
+      throw new Error("No response from AI");
+    }
+    const data: { items: InvoiceItem[] } = JSON.parse(response);
 
     if (!data.items || !Array.isArray(data.items)) {
       return res.status(400).json({ error: "Invalid response from AI" });
@@ -44,8 +58,8 @@ User message: ${message}`,
   } catch (error) {
     console.error(error);
     // Fallback: simple parsing without AI
-    const items = [];
-    const dayMap = {
+    const items: InvoiceItem[] = [];
+    const dayMap: { [key: string]: string } = {
       lun: "Mon",
       mar: "Tue",
       mie: "Wed",

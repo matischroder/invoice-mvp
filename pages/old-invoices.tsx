@@ -1,9 +1,27 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
-export default function OldInvoices() {
-  const [history, setHistory] = useState([]);
-  const [search, setSearch] = useState("");
+interface InvoiceItem {
+  day: string;
+  hours: string;
+  rate: string;
+  description?: string;
+}
+
+interface InvoiceHistoryItem {
+  yourName: string;
+  abn: string;
+  clientName: string;
+  clientEmail: string;
+  invoiceNumber: string;
+  date: string;
+  items: InvoiceItem[];
+  generatedAt: string;
+}
+
+const OldInvoices: React.FC = () => {
+  const [history, setHistory] = useState<InvoiceHistoryItem[]>([]);
+  const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
     const saved = localStorage.getItem("invoiceHistory");
@@ -115,4 +133,6 @@ export default function OldInvoices() {
       </div>
     </div>
   );
-}
+};
+
+export default OldInvoices;

@@ -1,7 +1,8 @@
+import React from "react";
 import InvoiceForm from "../components/InvoiceForm";
 import Link from "next/link";
 
-export default function Home() {
+const Home: React.FC = () => {
   return (
     <div
       style={{
@@ -50,4 +51,6 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};
+
+export default Home;

@@ -1,9 +1,20 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-export default function ChatInvoice({ onResult }) {
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+interface InvoiceItem {
+  day: string;
+  hours: number;
+  rate: number;
+  description: string;
+}
+
+interface ChatInvoiceProps {
+  onResult: (data: { items: InvoiceItem[] }) => void;
+}
+
+const ChatInvoice: React.FC<ChatInvoiceProps> = ({ onResult }) => {
+  const [text, setText] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -74,4 +85,6 @@ export default function ChatInvoice({ onResult }) {
       {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
     </div>
   );
-}
+};
+
+export default ChatInvoice;
