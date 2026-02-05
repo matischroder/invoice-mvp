@@ -1,0 +1,28 @@
+/* Color Palette - Edit colors here to change the entire app */
+:root {
+  /* Primary Colors */
+  --color-primary: #00d4aa;
+  --color-primary-dark: #009d7f;
+
+  /* Backgrounds */
+  --color-bg-dark: #1a1a1a;
+  --color-bg-input: #333;
+  --color-bg-surface: #2a2a2a;
+  --color-bg-row: #444;
+
+  /* Text Colors */
+  --color-text-primary: #fff;
+  --color-text-secondary: #ccc;
+  --color-text-dark: #000;
+
+  /* Borders */
+  --color-border: #555;
+
+  /* Status Colors */
+  --color-success: green;
+  --color-error: #ff4444;
+  --color-warning: #ffaa00;
+
+  /* Accent Colors */
+  --color-accent-primary: #00d4aa;
+}

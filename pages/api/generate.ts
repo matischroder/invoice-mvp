@@ -12,7 +12,8 @@ interface InvoiceItem {
 }
 
 interface GenerateRequest {
-  yourName: string;
+  fullName: string;
+  to: string;
   abn: string;
   clientName: string;
   clientEmail: string;
@@ -30,7 +31,8 @@ export default async function handler(
   }
 
   const {
-    yourName,
+    fullName,
+    to,
     abn,
     clientName,
     clientEmail,
@@ -76,21 +78,22 @@ export default async function handler(
       size: 14,
       color: rgb(0, 0, 0.5),
     });
-    page.drawText(`${yourName}`, { x: 50, y: height - 140, size: 12 });
+    page.drawText(`${fullName}`, { x: 50, y: height - 140, size: 12 });
     page.drawText(`ABN: ${abn}`, { x: 50, y: height - 160, size: 12 });
 
     // To
-    page.drawText("Bill To:", {
+    page.drawText("To:", {
       x: 300,
       y: height - 120,
       size: 14,
       color: rgb(0, 0, 0.5),
     });
-    page.drawText(`${clientName}`, { x: 300, y: height - 140, size: 12 });
-    page.drawText(`${clientEmail}`, { x: 300, y: height - 160, size: 12 });
+    page.drawText(`${to}`, { x: 300, y: height - 140, size: 12 });
+    page.drawText(`${clientName}`, { x: 300, y: height - 160, size: 12 });
+    page.drawText(`${clientEmail}`, { x: 300, y: height - 180, size: 12 });
 
     // Items Table
-    let y = height - 200;
+    let y = height - 220;
     page.drawText("Items", { x: 50, y, size: 16, color: rgb(0, 0, 0.5) });
     y -= 30;
 
@@ -162,6 +165,23 @@ export default async function handler(
       size: 10,
       color: rgb(0.7, 0.7, 0.7),
     });
+
+    // Notes
+    if (note) {
+      let noteY = 100; // Position for notes
+      page.drawText("Notes:", {
+        x: 50,
+        y: noteY,
+        size: 14,
+        color: rgb(0, 0, 0.5),
+      });
+      noteY -= 20;
+      const noteLines = note.split("\n");
+      noteLines.forEach((line) => {
+        page.drawText(line, { x: 50, y: noteY, size: 12 });
+        noteY -= 15;
+      });
+    }
 
     const pdfBytes = await pdfDoc.save();
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import ChatInvoice from "./ChatInvoice";
+import ChatInvoice from "./ChatInvoiceClean";
+import styles from "./InvoiceForm.module.css";
+import { colors } from "../utils/colors";
 
 interface InvoiceItem {
   type: "work" | "purchase";
@@ -14,51 +16,32 @@ interface InvoiceItem {
 }
 
 interface FormData {
-  yourName: string;
+  fullName: string;
+  to: string;
   abn: string;
   clientName: string;
   clientEmail: string;
   invoiceNumber: string;
   date: string;
   items: InvoiceItem[];
+  note: string;
 }
 
 const InvoiceForm: React.FC = () => {
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: "#333",
-    color: "#fff",
-    border: "1px solid #555",
-    padding: "10px",
-    margin: "5px 0",
-    borderRadius: "5px",
-    width: "100%",
-    fontSize: "16px",
-  };
-  const buttonStyle: React.CSSProperties = {
-    backgroundColor: "#00d4aa",
-    color: "#000",
-    border: "none",
-    padding: "10px 20px",
-    margin: "10px 5px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "16px",
-  };
-  const labelStyle: React.CSSProperties = {
-    color: "#00d4aa",
-    fontWeight: "bold",
-    marginTop: "15px",
-  };
   const [form, setForm] = useState<FormData>({
-    yourName: "",
+    fullName: "",
+    to: "",
     abn: "",
     clientName: "",
     clientEmail: "",
     invoiceNumber: "1",
     date: new Date().toISOString().slice(0, 10),
     items: [{ type: "work", day: "", hours: "", rate: "" }],
+    note: "",
   });
   const [synced, setSynced] = useState<boolean>(false);
+  const [showAdvancedFields, setShowAdvancedFields] = useState<boolean>(false);
+  const [showNote, setShowNote] = useState<boolean>(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem("invoiceData");
@@ -73,13 +56,20 @@ const InvoiceForm: React.FC = () => {
     localStorage.setItem(
       "invoiceData",
       JSON.stringify({
-        yourName: form.yourName,
+        fullName: form.fullName,
+        to: form.to,
         abn: form.abn,
         clientName: form.clientName,
         clientEmail: form.clientEmail,
       }),
     );
-  }, [form.yourName, form.abn, form.clientName, form.clientEmail]);
+  }, [form.fullName, form.to, form.abn, form.clientName, form.clientEmail]);
+
+  useEffect(() => {
+    // Show advanced fields if at least one essential field is filled
+    const hasEssentialData = form.fullName || form.to || form.date;
+    setShowAdvancedFields(hasEssentialData as any);
+  }, [form.fullName, form.to, form.date]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -153,56 +143,77 @@ const InvoiceForm: React.FC = () => {
 
   return (
     <>
-      <ChatInvoice
-        onResult={(data) =>
-          setForm((prev) => ({
-            ...prev,
-            items: data.items.map((item) => ({
-              day: item.day,
-              hours: item.hours.toString(),
-              rate: item.rate.toString(),
-              description: item.description,
-            })),
-          }))
-        }
-      />
       {synced && (
-        <p style={{ color: "green" }}>Sincronizado con sesión anterior</p>
+        <p style={{ color: colors.success }}>Synced with previous session</p>
       )}
 
-      <form onSubmit={handleSubmit}>...</form>
-      <form onSubmit={handleSubmit}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>Your Name</label>
+      <ChatInvoice
+        onResult={(data: any) => {
+          setForm((prev) => {
+            const updated = { ...prev };
+            if (data.fullName) updated.fullName = data.fullName;
+            else if (data.yourName && data.lastName)
+              updated.fullName = `${data.yourName} ${data.lastName}`;
+            else if (data.yourName) updated.fullName = data.yourName;
+            if (data.to) updated.to = data.to;
+            else if (data.company) updated.to = data.company;
+            if (data.abn) updated.abn = data.abn;
+            if (data.clientName) updated.clientName = data.clientName;
+            if (data.clientEmail) updated.clientEmail = data.clientEmail;
+            if (data.invoiceNumber) updated.invoiceNumber = data.invoiceNumber;
+            if (data.date) updated.date = data.date;
+            if (data.rate) {
+              // Set rate in items if work items
+              updated.items = prev.items.map((item) =>
+                item.type === "work"
+                  ? { ...item, rate: data.rate.toString() }
+                  : item,
+              );
+            }
+            if (data.items) {
+              updated.items = data.items.map((item: any) => ({
+                type: item.type || "work",
+                day: item.day || "",
+                hours: item.hours ? item.hours.toString() : "",
+                rate: item.rate ? item.rate.toString() : "",
+                description: item.description || "",
+                quantity: item.quantity ? item.quantity.toString() : "",
+                unitPrice: item.unitPrice ? item.unitPrice.toString() : "",
+              }));
+            }
+            if (data.note) updated.note = data.note;
+            return updated;
+          });
+        }}
+      />
+
+      <form className={styles.form} onSubmit={handleSubmit}>
+        {/* Essential fields */}
+        <div className={styles.gridField}>
+          <label className={styles.label}>Full Name</label>
           <input
-            style={inputStyle}
-            placeholder="Your Name"
-            name="yourName"
-            value={form.yourName}
+            className={styles.input}
+            placeholder="Your Full Name"
+            name="fullName"
+            value={form.fullName}
             onChange={handleChange}
             required
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>ABN</label>
+        <div className={styles.gridField}>
+          <label className={styles.label}>To</label>
           <input
-            style={inputStyle}
+            className={styles.input}
+            placeholder="Company or person to whom the ABN is issued"
+            name="to"
+            value={form.to}
+            onChange={handleChange}
+          />
+        </div>
+        <div className={styles.gridField}>
+          <label className={styles.label}>ABN</label>
+          <input
+            className={styles.input}
             placeholder="ABN"
             name="abn"
             value={form.abn}
@@ -210,18 +221,10 @@ const InvoiceForm: React.FC = () => {
             required
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>Client Name</label>
+        <div className={styles.gridField}>
+          <label className={styles.label}>Client Name</label>
           <input
-            style={inputStyle}
+            className={styles.input}
             placeholder="Client Name"
             name="clientName"
             value={form.clientName}
@@ -229,18 +232,10 @@ const InvoiceForm: React.FC = () => {
             required
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>Client Email</label>
+        <div className={styles.gridField}>
+          <label className={styles.label}>Client Email</label>
           <input
-            style={inputStyle}
+            className={styles.input}
             placeholder="Client Email"
             name="clientEmail"
             value={form.clientEmail}
@@ -248,18 +243,10 @@ const InvoiceForm: React.FC = () => {
             required
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>Invoice Number</label>
+        <div className={styles.gridField}>
+          <label className={styles.label}>Invoice Number</label>
           <input
-            style={inputStyle}
+            className={styles.input}
             placeholder="Invoice #"
             name="invoiceNumber"
             value={form.invoiceNumber}
@@ -267,18 +254,10 @@ const InvoiceForm: React.FC = () => {
             required
           />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "150px 1fr",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <label style={labelStyle}>Date</label>
+        <div className={styles.gridField}>
+          <label className={styles.label}>Date</label>
           <input
-            style={inputStyle}
+            className={styles.input}
             type="date"
             name="date"
             value={form.date}
@@ -286,59 +265,51 @@ const InvoiceForm: React.FC = () => {
             required
           />
         </div>
-        <h3 style={{ color: "#00d4aa", marginTop: "20px" }}>Items</h3>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            backgroundColor: "#2a2a2a",
-            color: "#fff",
-            marginBottom: "10px",
-          }}
-        >
+        <h3 className={styles.sectionTitle}>Items</h3>
+        <table className={styles.table}>
           <thead>
             <tr>
               <th
                 style={{
-                  border: "1px solid #555",
+                  border: `1px solid ${colors.border}`,
                   padding: "10px",
-                  backgroundColor: "#444",
+                  backgroundColor: colors.bgRow,
                 }}
               >
                 Type
               </th>
               <th
                 style={{
-                  border: "1px solid #555",
+                  border: `1px solid ${colors.border}`,
                   padding: "10px",
-                  backgroundColor: "#444",
+                  backgroundColor: colors.bgRow,
                 }}
               >
                 Description/Day
               </th>
               <th
                 style={{
-                  border: "1px solid #555",
+                  border: `1px solid ${colors.border}`,
                   padding: "10px",
-                  backgroundColor: "#444",
+                  backgroundColor: colors.bgRow,
                 }}
               >
                 Hours/Quantity
               </th>
               <th
                 style={{
-                  border: "1px solid #555",
+                  border: `1px solid ${colors.border}`,
                   padding: "10px",
-                  backgroundColor: "#444",
+                  backgroundColor: colors.bgRow,
                 }}
               >
                 Rate/Unit Price
               </th>
               <th
                 style={{
-                  border: "1px solid #555",
+                  border: `1px solid ${colors.border}`,
                   padding: "10px",
-                  backgroundColor: "#444",
+                  backgroundColor: colors.bgRow,
                 }}
               >
                 Actions
@@ -348,9 +319,23 @@ const InvoiceForm: React.FC = () => {
           <tbody>
             {form.items.map((item, i) => (
               <tr key={i}>
-                <td style={{ border: "1px solid #555", padding: "5px" }}>
+                <td
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    padding: "5px",
+                  }}
+                >
                   <select
-                    style={{ ...inputStyle, margin: 0, width: "100%" }}
+                    style={{
+                      backgroundColor: colors.bgInput,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.border}`,
+                      padding: "10px",
+                      margin: 0,
+                      borderRadius: "5px",
+                      width: "100%",
+                      fontSize: "16px",
+                    }}
                     name="type"
                     value={item.type}
                     onChange={(e) => handleChange(e, i)}
@@ -359,9 +344,23 @@ const InvoiceForm: React.FC = () => {
                     <option value="purchase">Purchase</option>
                   </select>
                 </td>
-                <td style={{ border: "1px solid #555", padding: "5px" }}>
+                <td
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    padding: "5px",
+                  }}
+                >
                   <input
-                    style={{ ...inputStyle, margin: 0, width: "100%" }}
+                    style={{
+                      backgroundColor: colors.bgInput,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.border}`,
+                      padding: "10px",
+                      margin: 0,
+                      borderRadius: "5px",
+                      width: "100%",
+                      fontSize: "16px",
+                    }}
                     placeholder={item.type === "work" ? "Day" : "Description"}
                     name={item.type === "work" ? "day" : "description"}
                     value={item.type === "work" ? item.day : item.description}
@@ -369,9 +368,23 @@ const InvoiceForm: React.FC = () => {
                     required
                   />
                 </td>
-                <td style={{ border: "1px solid #555", padding: "5px" }}>
+                <td
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    padding: "5px",
+                  }}
+                >
                   <input
-                    style={{ ...inputStyle, margin: 0, width: "100%" }}
+                    style={{
+                      backgroundColor: colors.bgInput,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.border}`,
+                      padding: "10px",
+                      margin: 0,
+                      borderRadius: "5px",
+                      width: "100%",
+                      fontSize: "16px",
+                    }}
                     placeholder={item.type === "work" ? "Hours" : "Quantity"}
                     name={item.type === "work" ? "hours" : "quantity"}
                     value={item.type === "work" ? item.hours : item.quantity}
@@ -379,9 +392,23 @@ const InvoiceForm: React.FC = () => {
                     required
                   />
                 </td>
-                <td style={{ border: "1px solid #555", padding: "5px" }}>
+                <td
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    padding: "5px",
+                  }}
+                >
                   <input
-                    style={{ ...inputStyle, margin: 0, width: "100%" }}
+                    style={{
+                      backgroundColor: colors.bgInput,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.border}`,
+                      padding: "10px",
+                      margin: 0,
+                      borderRadius: "5px",
+                      width: "100%",
+                      fontSize: "16px",
+                    }}
                     placeholder={item.type === "work" ? "Rate" : "Unit Price"}
                     name={item.type === "work" ? "rate" : "unitPrice"}
                     value={item.type === "work" ? item.rate : item.unitPrice}
@@ -391,7 +418,7 @@ const InvoiceForm: React.FC = () => {
                 </td>
                 <td
                   style={{
-                    border: "1px solid #555",
+                    border: `1px solid ${colors.border}`,
                     padding: "5px",
                     textAlign: "center",
                   }}
@@ -399,8 +426,8 @@ const InvoiceForm: React.FC = () => {
                   <button
                     type="button"
                     style={{
-                      backgroundColor: "#ff4444",
-                      color: "#fff",
+                      backgroundColor: colors.error,
+                      color: colors.textPrimary,
                       border: "none",
                       padding: "5px 10px",
                       borderRadius: "3px",
@@ -415,7 +442,20 @@ const InvoiceForm: React.FC = () => {
             ))}
           </tbody>
         </table>
-        <button type="button" style={buttonStyle} onClick={addItem}>
+        <button
+          type="button"
+          style={{
+            backgroundColor: colors.primary,
+            color: colors.textDark,
+            border: "none",
+            padding: "10px 20px",
+            margin: "10px 5px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+          onClick={addItem}
+        >
           Add Row
         </button>
       </form>
@@ -425,13 +465,13 @@ const InvoiceForm: React.FC = () => {
         style={{
           marginTop: "20px",
           padding: "20px",
-          backgroundColor: "#2a2a2a",
-          border: "1px solid #555",
+          backgroundColor: colors.bgSurface,
+          border: `1px solid ${colors.border}`,
           borderRadius: "5px",
-          color: "#fff",
+          color: colors.textPrimary,
         }}
       >
-        <h2 style={{ color: "#00d4aa" }}>Invoice Preview</h2>
+        <h2 style={{ color: colors.primary }}>Invoice Preview</h2>
         <p>
           <strong>Invoice Number:</strong> {form.invoiceNumber}
         </p>
@@ -450,7 +490,7 @@ const InvoiceForm: React.FC = () => {
         <p>
           <strong>Email:</strong> {form.clientEmail}
         </p>
-        <h3 style={{ color: "#00d4aa" }}>Items</h3>
+        <h3 style={{ color: colors.primary }}>Items</h3>
         {(() => {
           const workItems = form.items.filter((item) => item.type === "work");
           const purchaseItems = form.items.filter(
@@ -460,13 +500,13 @@ const InvoiceForm: React.FC = () => {
             <>
               {workItems.length > 0 && (
                 <>
-                  <h4 style={{ color: "#00d4aa" }}>Work Hours</h4>
+                  <h4 style={{ color: colors.primary }}>Work Hours</h4>
                   <table
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
-                      backgroundColor: "#333",
-                      color: "#fff",
+                      backgroundColor: colors.bgInput,
+                      color: colors.textPrimary,
                       marginBottom: "20px",
                     }}
                   >
@@ -474,36 +514,36 @@ const InvoiceForm: React.FC = () => {
                       <tr>
                         <th
                           style={{
-                            border: "1px solid #555",
+                            border: `1px solid ${colors.border}`,
                             padding: "5px",
-                            backgroundColor: "#444",
+                            backgroundColor: colors.bgRow,
                           }}
                         >
                           Day
                         </th>
                         <th
                           style={{
-                            border: "1px solid #555",
+                            border: `1px solid ${colors.border}`,
                             padding: "5px",
-                            backgroundColor: "#444",
+                            backgroundColor: colors.bgRow,
                           }}
                         >
                           Hours
                         </th>
                         <th
                           style={{
-                            border: "1px solid #555",
+                            border: `1px solid ${colors.border}`,
                             padding: "5px",
-                            backgroundColor: "#444",
+                            backgroundColor: colors.bgRow,
                           }}
                         >
                           Rate
                         </th>
                         <th
                           style={{
-                            border: "1px solid #555",
+                            border: `1px solid ${colors.border}`,
                             padding: "5px",
-                            backgroundColor: "#444",
+                            backgroundColor: colors.bgRow,
                           }}
                         >
                           Total
@@ -652,10 +692,65 @@ const InvoiceForm: React.FC = () => {
               .toFixed(2)}
           </strong>
         </p>
+        {form.note && (
+          <div style={{ marginTop: "20px" }}>
+            <h4 style={{ color: "#00d4aa" }}>Notes:</h4>
+            <p style={{ whiteSpace: "pre-wrap", color: "#fff" }}>{form.note}</p>
+          </div>
+        )}
       </div>
-
+      {/* Botón Add Note */}
+      <div style={{ marginTop: "20px" }}>
+        <button
+          type="button"
+          style={{
+            backgroundColor: "#00d4aa",
+            color: "#000",
+            border: "none",
+            padding: "10px 20px",
+            margin: "10px 5px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+          onClick={() => setShowNote(!showNote)}
+        >
+          {showNote ? "Hide Note" : "Add Note"}
+        </button>
+        {showNote && (
+          <textarea
+            style={{
+              backgroundColor: "#333",
+              color: "#fff",
+              border: "1px solid #555",
+              padding: "10px",
+              borderRadius: "5px",
+              fontSize: "16px",
+              width: "100%",
+              height: "100px",
+              marginTop: "10px",
+            }}
+            placeholder="Add any additional notes here..."
+            name="note"
+            value={form.note}
+            onChange={handleChange}
+          />
+        )}
+      </div>
       <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
-        <button type="submit" style={buttonStyle}>
+        <button
+          type="submit"
+          style={{
+            backgroundColor: "#00d4aa",
+            color: "#000",
+            border: "none",
+            padding: "10px 20px",
+            margin: "10px 5px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
           Generate PDF
         </button>
       </form>
