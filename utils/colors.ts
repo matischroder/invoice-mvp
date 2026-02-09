@@ -1,8 +1,8 @@
 // Color palette constants for inline styles
 export const colors = {
   // Primary Colors
-  primary: "#00d4aa",
-  primaryDark: "#009d7f",
+  primary: "#1477da",
+  primaryDark: "#045dd0",
 
   // Backgrounds
   bgDark: "#1a1a1a",
@@ -24,5 +24,5 @@ export const colors = {
   warning: "#ffaa00",
 
   // Accent Colors
-  accentPrimary: "#00d4aa",
+  accentPrimary: "#399adb",
 };
