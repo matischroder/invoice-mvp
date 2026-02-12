@@ -22,19 +22,17 @@ interface FormData {
   yourEmail?: string;
   yourNumber?: string;
   yourAddress?: string;
-  yourNotes?: string;
 
   //cliente
   clientName: string;
   clientEmail?: string;
   clientAddress?: string;
-  clientNotes?: string;
 
   //comunes
   invoiceNumber: string;
   date: Date;
   items: InvoiceItem[];
-  note?: string;
+  notes?: string;
 }
 
 const InvoiceForm: React.FC = () => {
@@ -44,21 +42,18 @@ const InvoiceForm: React.FC = () => {
     yourEmail: "",
     yourNumber: "",
     yourAddress: "",
-    yourNotes: "",
     clientName: "",
     clientEmail: "",
     clientAddress: "",
-    clientNotes: "",
     invoiceNumber: "",
     date: new Date(),
     items: [{ type: "work", day: "", hours: "", rate: "" }],
-    note: "",
+    notes: "",
   });
 
   const [synced, setSynced] = useState<boolean>(false);
   const [showAdvancedFields, setShowAdvancedFields] = useState<boolean>(false);
-  const [showYourNote, setShowYourNote] = useState<boolean>(false);
-  const [showClientNote, setShowClientNote] = useState<boolean>(false);
+  const [showNotes, setShowNotes] = useState<boolean>(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem("invoiceData");
@@ -78,11 +73,9 @@ const InvoiceForm: React.FC = () => {
         yourEmail: form.yourEmail,
         yourNumber: form.yourNumber,
         yourAddress: form.yourAddress,
-        yourNotes: form.yourNotes,
         clientName: form.clientName,
         clientEmail: form.clientEmail,
         clientAddress: form.clientAddress,
-        clientNotes: form.clientNotes,
         invoiceNumber: form.invoiceNumber,
       }),
     );
@@ -92,11 +85,9 @@ const InvoiceForm: React.FC = () => {
     form.yourEmail,
     form.yourNumber,
     form.yourAddress,
-    form.yourNotes,
     form.clientName,
     form.clientEmail,
     form.clientAddress,
-    form.clientNotes,
     form.invoiceNumber,
   ]);
 
@@ -231,7 +222,7 @@ const InvoiceForm: React.FC = () => {
               }));
             }
 
-            if (data.note) updated.note = data.note;
+            if (data.notes) updated.notes = data.notes;
 
             return updated;
           });
@@ -239,230 +230,112 @@ const InvoiceForm: React.FC = () => {
       />
 
       <form className={styles.form} onSubmit={handleSubmit}>
-        {/* Your Details */}
-        <div
-          style={{
-            // backgroundColor: "black",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h3 className={styles.sectionTitle}>Your Details</h3>
-          <div className={styles.gridField}>
-            <label className={styles.label}>Full Name</label>
-            <input
-              className={styles.input}
-              placeholder="Your Full Name"
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-            />
+        <div style={{ display: "flex" }}>
+          {/* Your Details */}
+
+          <div
+            style={{
+              width: "50%",
+              padding: "4px",
+              alignItems: "center",
+            }}
+          >
+            <h3 className={styles.sectionTitle}>Your Details</h3>
+            <div className={styles.gridField}>
+              <label className={styles.label}>Full Name</label>
+              <input
+                className={styles.input}
+                placeholder="Your Full Name"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className={styles.gridField}>
+              <label className={styles.label}>ABN</label>
+              <input
+                className={styles.input}
+                placeholder="ABN"
+                name="abn"
+                value={form.abn}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className={styles.gridField}>
+              <label className={styles.label}>Email</label>
+              <input
+                className={styles.input}
+                placeholder="Your email"
+                name="yourEmail"
+                value={form.yourEmail}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className={styles.gridField}>
+              <label className={styles.label}>Phone</label>
+              <input
+                className={styles.input}
+                placeholder="Your phone number"
+                name="yourNumber"
+                value={form.yourNumber}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className={styles.gridField}>
+              <label className={styles.label}>Address</label>
+              <input
+                className={styles.input}
+                placeholder="Your address"
+                name="yourAddress"
+                value={form.yourAddress}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
-          <div className={styles.gridField}>
-            <label className={styles.label}>ABN</label>
-            <input
-              className={styles.input}
-              placeholder="ABN"
-              name="abn"
-              value={form.abn}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          {/* Client Data */}
+          <div style={{ width: "50%", padding: "4px", alignItems: "center" }}>
+            <h3 className={styles.sectionTitle}>Client Data</h3>
+            <div className={styles.gridField}>
+              <label className={styles.label}>Client Name</label>
+              <input
+                className={styles.input}
+                placeholder="Client Name"
+                name="clientName"
+                value={form.clientName}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className={styles.gridField}>
-            <label className={styles.label}>Email</label>
-            <input
-              className={styles.input}
-              placeholder="Your email"
-              name="yourEmail"
-              value={form.yourEmail}
-              onChange={handleChange}
-            />
-          </div>
+            <div className={styles.gridField}>
+              <label className={styles.label}>Client Email</label>
+              <input
+                className={styles.input}
+                placeholder="Client Email"
+                name="clientEmail"
+                value={form.clientEmail}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className={styles.gridField}>
-            <label className={styles.label}>Phone</label>
-            <input
-              className={styles.input}
-              placeholder="Your phone number"
-              name="yourNumber"
-              value={form.yourNumber}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className={styles.gridField}>
-            <label className={styles.label}>Address</label>
-            <input
-              className={styles.input}
-              placeholder="Your address"
-              name="yourAddress"
-              value={form.yourAddress}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div style={{ marginTop: "8px" }}>
-            <button
-              type="button"
-              style={{
-                backgroundColor: colors.primary,
-                color: colors.textDark,
-                border: "none",
-                padding: "8px 12px",
-                margin: "6px 0",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
-              onClick={() => setShowYourNote((s) => !s)}
-            >
-              {showYourNote ? "Hide Notes" : "Add Notes"}
-            </button>
-
-            {showYourNote && (
-              <div style={{ marginTop: "10px" }}>
-                <textarea
-                  style={{
-                    backgroundColor: colors.bgInput,
-                    color: colors.textPrimary,
-                    border: `1px solid ${colors.border}`,
-                    padding: "10px",
-                    borderRadius: "5px",
-                    fontSize: "16px",
-                    width: "100%",
-                    height: "100px",
-                  }}
-                  placeholder="Add any notes about you..."
-                  name="yourNotes"
-                  value={form.yourNotes}
-                  onChange={handleChange}
-                />
-                <div style={{ marginTop: "6px" }}>
-                  <button
-                    type="button"
-                    style={{
-                      backgroundColor: colors.error,
-                      color: colors.textPrimary,
-                      border: "none",
-                      padding: "6px 10px",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                    onClick={() => {
-                      setForm((prev) => ({ ...prev, yourNotes: "" }));
-                      setShowYourNote(false);
-                    }}
-                  >
-                    Remove Note
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Client Data */}
-        <div>
-          <h3 className={styles.sectionTitle}>Client Data</h3>
-          <div className={styles.gridField}>
-            <label className={styles.label}>Client Name</label>
-            <input
-              className={styles.input}
-              placeholder="Client Name"
-              name="clientName"
-              value={form.clientName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className={styles.gridField}>
-            <label className={styles.label}>Client Email</label>
-            <input
-              className={styles.input}
-              placeholder="Client Email"
-              name="clientEmail"
-              value={form.clientEmail}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className={styles.gridField}>
-            <label className={styles.label}>Client Address</label>
-            <input
-              className={styles.input}
-              placeholder="Client address"
-              name="clientAddress"
-              value={form.clientAddress}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div style={{ marginTop: "8px" }}>
-            <button
-              type="button"
-              style={{
-                backgroundColor: colors.primary,
-                color: colors.textDark,
-                border: "none",
-                padding: "8px 12px",
-                margin: "6px 0",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
-              onClick={() => setShowClientNote((s) => !s)}
-            >
-              {showClientNote ? "Hide Notes" : "Add Notes"}
-            </button>
-
-            {showClientNote && (
-              <div style={{ marginTop: "10px" }}>
-                <textarea
-                  style={{
-                    backgroundColor: colors.bgInput,
-                    color: colors.textPrimary,
-                    border: `1px solid ${colors.border}`,
-                    padding: "10px",
-                    borderRadius: "5px",
-                    fontSize: "16px",
-                    width: "100%",
-                    height: "100px",
-                  }}
-                  placeholder="Add any notes about the client..."
-                  name="clientNotes"
-                  value={form.clientNotes}
-                  onChange={handleChange}
-                />
-                <div style={{ marginTop: "6px" }}>
-                  <button
-                    type="button"
-                    style={{
-                      backgroundColor: colors.error,
-                      color: colors.textPrimary,
-                      border: "none",
-                      padding: "6px 10px",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                    onClick={() => {
-                      setForm((prev) => ({ ...prev, clientNotes: "" }));
-                      setShowClientNote(false);
-                    }}
-                  >
-                    Remove Note
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className={styles.gridField}>
+              <label className={styles.label}>Client Address</label>
+              <input
+                className={styles.input}
+                placeholder="Client address"
+                name="clientAddress"
+                value={form.clientAddress}
+                onChange={handleChange}
+              />
+            </div>
           </div>
         </div>
 
@@ -488,6 +361,49 @@ const InvoiceForm: React.FC = () => {
             onChange={handleChange}
             required
           />
+        </div>
+
+        <div style={{ marginTop: "16px" }}>
+          <button
+            type="button"
+            style={{
+              backgroundColor: colors.primary,
+              color: colors.textDark,
+              border: "none",
+              padding: "10px 16px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "600",
+              width: "100%",
+            }}
+            onClick={() => setShowNotes((s) => !s)}
+          >
+            {showNotes ? "▼ Hide Notes" : "▶ Add Notes to Invoice"}
+          </button>
+
+          {showNotes && (
+            <div style={{ marginTop: "12px" }}>
+              <textarea
+                style={{
+                  backgroundColor: colors.bgInput,
+                  color: colors.textPrimary,
+                  border: `2px solid ${colors.primary}`,
+                  padding: "12px",
+                  borderRadius: "5px",
+                  fontSize: "14px",
+                  width: "100%",
+                  height: "120px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                }}
+                placeholder="Add notes that will appear in the invoice..."
+                name="notes"
+                value={form.notes || ""}
+                onChange={handleChange}
+              />
+            </div>
+          )}
         </div>
 
         {showAdvancedFields && (
@@ -732,12 +648,6 @@ const InvoiceForm: React.FC = () => {
           <p>
             <strong>ABN:</strong> {form.abn}
           </p>
-          {form.yourNotes && (
-            <div style={{ marginTop: "8px" }}>
-              <h4 style={{ color: colors.primary }}>From Notes</h4>
-              <p style={{ whiteSpace: "pre-wrap" }}>{form.yourNotes}</p>
-            </div>
-          )}
 
           <p>
             <strong>To:</strong> {form.clientName}
@@ -745,12 +655,6 @@ const InvoiceForm: React.FC = () => {
           <p>
             <strong>Email:</strong> {form.clientEmail}
           </p>
-          {form.clientNotes && (
-            <div style={{ marginTop: "8px" }}>
-              <h4 style={{ color: colors.primary }}>Client Notes</h4>
-              <p style={{ whiteSpace: "pre-wrap" }}>{form.clientNotes}</p>
-            </div>
-          )}
 
           <h3 style={{ color: colors.primary }}>Items</h3>
 
@@ -993,6 +897,21 @@ const InvoiceForm: React.FC = () => {
                 .toFixed(2)}
             </strong>
           </p>
+
+          {form.notes && (
+            <div
+              style={{
+                marginTop: "20px",
+                borderTop: `2px solid ${colors.border}`,
+                paddingTop: "12px",
+              }}
+            >
+              <h4 style={{ color: colors.primary, marginBottom: "8px" }}>
+                Notes
+              </h4>
+              <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{form.notes}</p>
+            </div>
+          )}
         </div>
 
         {/* Submit */}

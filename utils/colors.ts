@@ -19,7 +19,7 @@ export const colors = {
   border: "#555",
 
   // Status Colors
-  success: "green",
+  success: "#399adb",
   error: "#ff4444",
   warning: "#ffaa00",
 

@@ -13,13 +13,17 @@ interface InvoiceItem {
 
 interface GenerateRequest {
   fullName: string;
-  to: string;
   abn: string;
+  yourEmail: string;
+  yourNumber: string;
+  yourAddress: string;
   clientName: string;
   clientEmail: string;
+  clientAddress: string;
   invoiceNumber: string;
   date: string;
   items: InvoiceItem[];
+  notes?: string;
 }
 
 export default async function handler(
@@ -32,16 +36,27 @@ export default async function handler(
 
   const {
     fullName,
-    to,
     abn,
+    yourEmail,
+    yourNumber,
+    yourAddress,
     clientName,
     clientEmail,
+    clientAddress,
     invoiceNumber,
     date,
     items,
+    notes,
   }: GenerateRequest = req.body;
 
   try {
+    // Format date as "day Month(3 letters) year" (e.g., "12 Feb 2026")
+    const dateObj = new Date(date);
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleDateString("en-US", { month: "short" });
+    const year = dateObj.getFullYear();
+    const formattedDate = `${day} ${month} ${year}`;
+
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage();
     const { width, height } = page.getSize();
@@ -56,81 +71,97 @@ export default async function handler(
       borderWidth: 1,
     });
 
-    // Header
-    page.drawText("INVOICE", {
+    // Header Section - Professional Layout
+    page.drawText(fullName.toUpperCase(), {
       x: 50,
-      y: height - 60,
-      size: 30,
+      y: height - 50,
+      size: 18,
       color: rgb(0, 0.5, 0),
     });
+    page.drawText("INVOICE", {
+      x: 50,
+      y: height - 75,
+      size: 24,
+      color: rgb(0, 0, 0),
+    });
 
-    page.drawText(`Invoice Number: ${invoiceNumber}`, {
-      x: 400,
-      y: height - 60,
+    // Invoice details (top right)
+    page.drawText(`Invoice #${invoiceNumber}`, {
+      x: width - 150,
+      y: height - 50,
       size: 12,
+      color: rgb(0, 0, 0),
     });
-    page.drawText(`Date: ${date}`, { x: 400, y: height - 80, size: 12 });
+    page.drawText(`Date: ${formattedDate}`, {
+      x: width - 150,
+      y: height - 70,
+      size: 11,
+      color: rgb(0.4, 0.4, 0.4),
+    });
 
-    // From
-    page.drawText("From:", {
+    // Divider line
+    page.drawLine({
+      start: { x: 50, y: height - 95 },
+      end: { x: width - 50, y: height - 95 },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
+
+    // From and To sections
+    let sectionY = height - 130;
+
+    // From section
+    page.drawText("FROM", {
       x: 50,
-      y: height - 120,
-      size: 14,
-      color: rgb(0, 0, 0.5),
+      y: sectionY,
+      size: 11,
+      color: rgb(0, 0.5, 0),
     });
-    page.drawText(`${fullName}`, { x: 50, y: height - 140, size: 12 });
-    page.drawText(`ABN: ${abn}`, { x: 50, y: height - 160, size: 12 });
+    sectionY -= 18;
+    page.drawText(fullName, { x: 50, y: sectionY, size: 11 });
+    sectionY -= 14;
+    if (yourEmail) {
+      page.drawText(yourEmail, { x: 50, y: sectionY, size: 10 });
+      sectionY -= 12;
+    }
+    if (yourNumber) {
+      page.drawText(yourNumber, { x: 50, y: sectionY, size: 10 });
+      sectionY -= 12;
+    }
+    page.drawText(`ABN: ${abn}`, { x: 50, y: sectionY, size: 10 });
+    sectionY -= 12;
+    if (yourAddress) {
+      page.drawText(yourAddress, { x: 50, y: sectionY, size: 10 });
+    }
 
-    // To
-    page.drawText("To:", {
+    // To section
+    sectionY = height - 130;
+    page.drawText("BILL TO", {
       x: 300,
-      y: height - 120,
-      size: 14,
-      color: rgb(0, 0, 0.5),
+      y: sectionY,
+      size: 11,
+      color: rgb(0, 0.5, 0),
     });
-    page.drawText(`${to}`, { x: 300, y: height - 140, size: 12 });
-    page.drawText(`${clientName}`, { x: 300, y: height - 160, size: 12 });
-    page.drawText(`${clientEmail}`, { x: 300, y: height - 180, size: 12 });
+    sectionY -= 18;
+    page.drawText(clientName, { x: 300, y: sectionY, size: 11 });
+    sectionY -= 14;
+    if (clientEmail) {
+      page.drawText(clientEmail, { x: 300, y: sectionY, size: 10 });
+      sectionY -= 12;
+    }
+    if (clientAddress) {
+      page.drawText(clientAddress, { x: 300, y: sectionY, size: 10 });
+    }
 
-    // Items Table
-    let y = height - 220;
-    page.drawText("Items", { x: 50, y, size: 16, color: rgb(0, 0, 0.5) });
-    y -= 30;
-
-    // Table Header
-    page.drawRectangle({
-      x: 50,
-      y: y - 5,
-      width: 500,
-      height: 20,
-      color: rgb(0.9, 0.9, 0.9),
-    });
-    page.drawText("Description", { x: 55, y: y, size: 12 });
-    page.drawText("Hours", { x: 250, y: y, size: 12 });
-    page.drawText("Rate", { x: 350, y: y, size: 12 });
-    page.drawText("Total", { x: 450, y: y, size: 12 });
-    page.drawLine({ start: { x: 50, y }, end: { x: 550, y }, thickness: 1 });
-    y -= 25;
-
-    items.forEach((item) => {
-      page.drawText(`${item.day || item.description}`, { x: 55, y, size: 12 });
-      page.drawText(`${item.hours}`, { x: 250, y, size: 12 });
-      page.drawText(`$${item.rate}`, { x: 350, y, size: 12 });
-      page.drawText(
-        `$${(parseFloat(item.hours || "0") * parseFloat(item.rate || "0")).toFixed(2)}`,
-        {
-          x: 450,
-          y,
-          size: 12,
-        },
-      );
-      y -= 20;
+    // Divider line
+    page.drawLine({
+      start: { x: 50, y: height - 225 },
+      end: { x: width - 50, y: height - 225 },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
     });
 
-    // Total
-    y -= 10;
-    page.drawLine({ start: { x: 400, y }, end: { x: 550, y }, thickness: 1 });
-    y -= 20;
+    // Calculate total
     const total = items.reduce((sum, item) => {
       if (item.type === "work") {
         return (
@@ -143,45 +174,185 @@ export default async function handler(
         );
       }
     }, 0);
-    page.drawText(`Total: $${total.toFixed(2)}`, {
-      x: 400,
+
+    // Items Table
+    let y = height - 260;
+    page.drawText("ITEMS", {
+      x: 50,
       y,
-      size: 14,
+      size: 13,
+      color: rgb(0, 0, 0),
+    });
+    y -= 25;
+
+    // Table Header
+    page.drawRectangle({
+      x: 50,
+      y: y - 20,
+      width: 500,
+      height: 20,
+      color: rgb(0, 0.5, 0),
+    });
+    // Header borders
+    page.drawLine({
+      start: { x: 50, y: y - 20 },
+      end: { x: 550, y: y - 20 },
+      thickness: 1,
+      color: rgb(0, 0.5, 0),
+    });
+    page.drawLine({
+      start: { x: 50, y: y },
+      end: { x: 550, y: y },
+      thickness: 1,
       color: rgb(0, 0.5, 0),
     });
 
-    // Footer
-    page.drawText("Thank you for your business!", {
-      x: 50,
-      y: 50,
-      size: 12,
-      color: rgb(0.5, 0.5, 0.5),
+    page.drawText("Description", {
+      x: 60,
+      y: y - 13,
+      size: 11,
+      color: rgb(1, 1, 1),
     });
-
-    // Watermark
-    page.drawText("Created with Invoice-MVP", {
-      x: width / 2 - 100,
-      y: 30,
-      size: 10,
-      color: rgb(0.7, 0.7, 0.7),
+    page.drawText("Qty/Hours", {
+      x: 300,
+      y: y - 13,
+      size: 11,
+      color: rgb(1, 1, 1),
     });
+    page.drawText("Rate", {
+      x: 400,
+      y: y - 13,
+      size: 11,
+      color: rgb(1, 1, 1),
+    });
+    page.drawText("Amount", {
+      x: 480,
+      y: y - 13,
+      size: 11,
+      color: rgb(1, 1, 1),
+    });
+    y -= 20;
 
-    // Notes
-    if (note) {
-      let noteY = 100; // Position for notes
-      page.drawText("Notes:", {
-        x: 50,
-        y: noteY,
-        size: 14,
-        color: rgb(0, 0, 0.5),
+    items.forEach((item, index) => {
+      // Alternate row colors for better readability
+      if (index % 2 === 0) {
+        page.drawRectangle({
+          x: 50,
+          y: y - 20,
+          width: 500,
+          height: 20,
+          color: rgb(0.97, 0.97, 0.97),
+        });
+      }
+
+      // Description (left aligned)
+      page.drawText(`${item.day || item.description || ""}`, {
+        x: 60,
+        y: y - 13,
+        size: 11,
       });
-      noteY -= 20;
-      const noteLines = note.split("\n");
-      noteLines.forEach((line) => {
-        page.drawText(line, { x: 50, y: noteY, size: 12 });
-        noteY -= 15;
+
+      // Quantity/Hours (centered)
+      const qty = item.hours || item.quantity || "";
+      page.drawText(`${qty}`, {
+        x: 310,
+        y: y - 13,
+        size: 11,
+      });
+
+      // Rate (centered)
+      page.drawText(`$${item.rate || item.unitPrice || ""}`, {
+        x: 405,
+        y: y - 13,
+        size: 11,
+      });
+
+      // Total (right aligned)
+      const itemTotal = (
+        parseFloat(item.hours || item.quantity || "0") *
+        parseFloat(item.rate || item.unitPrice || "0")
+      ).toFixed(2);
+      page.drawText(`$${itemTotal}`, {
+        x: 505,
+        y: y - 13,
+        size: 11,
+      });
+
+      // Row border
+      page.drawLine({
+        start: { x: 50, y: y - 20 },
+        end: { x: 550, y: y - 20 },
+        thickness: 0.5,
+        color: rgb(0.9, 0.9, 0.9),
+      });
+
+      y -= 20;
+    });
+
+    // Final border
+    page.drawLine({
+      start: { x: 50, y: y },
+      end: { x: 550, y: y },
+      thickness: 1.5,
+      color: rgb(0, 0.5, 0),
+    });
+    y -= 15;
+
+    // Total section
+    page.drawRectangle({
+      x: 360,
+      y: y - 22,
+      width: 190,
+      height: 22,
+      color: rgb(0, 0.5, 0),
+    });
+    page.drawText(`TOTAL: $${total.toFixed(2)}`, {
+      x: 375,
+      y: y - 13,
+      size: 13,
+      color: rgb(1, 1, 1),
+    });
+
+    // Notes section
+    let notesY = y - 40;
+
+    if (notes) {
+      page.drawText("NOTES", {
+        x: 50,
+        y: notesY,
+        size: 11,
+        color: rgb(0, 0, 0),
+      });
+      notesY -= 15;
+      page.drawText(notes, {
+        x: 50,
+        y: notesY,
+        size: 10,
+        color: rgb(0.3, 0.3, 0.3),
       });
     }
+
+    // Footer
+    page.drawLine({
+      start: { x: 50, y: 70 },
+      end: { x: width - 50, y: 70 },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
+
+    page.drawText("Thank you for your business!", {
+      x: width / 2 - 100,
+      y: 45,
+      size: 11,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+
+    page.drawText("Created with Invoice-MVP", {
+      x: width / 2 - 80,
+      y: 25,
+      size: 9,
+      color: rgb(0.7, 0.7, 0.7),
+    });
 
     const pdfBytes = await pdfDoc.save();
 
